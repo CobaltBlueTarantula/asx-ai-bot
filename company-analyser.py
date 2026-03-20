@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
 import numpy as np
-import json
+import simplejson as json
 from datetime import datetime
 
 def get_filter_params(code):
@@ -217,8 +217,8 @@ for s in passed[:80]:
 
 path = f"analyser_outputs/top_companies_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.json"
 
-# save top 80 for future use
+# save top 80 company data to json
 with open(path, 'w') as f:
-    json.dump(passed[:80], f, indent=2)
+    json.dump(passed[:80], f, indent=2, ignore_nan=True)
 
 print(f"\nSaved top {min(80, len(passed))} to {path}")
