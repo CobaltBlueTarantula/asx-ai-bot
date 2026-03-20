@@ -185,7 +185,7 @@ results = []
 passed  = []
 failed = []
 
-df = pd.read_csv('companies-2026.csv')
+df = pd.read_csv('resources/companies-2026.csv')
 companies = df['Code']
 
 for i, code in enumerate(companies):
