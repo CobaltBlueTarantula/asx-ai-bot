@@ -71,8 +71,8 @@ if __name__ == "__main__":
         cash, portfolio = asx.get_cash_and_portfolio_value(page)
 
         # send llm request
-        #path = analyse()
-        path = "analyser_outputs/top_companies_2026-03-22_15-07-14.json"
+        path = analyse()
+        #path = "analyser_outputs/top_companies_2026-03-22_15-07-14.json"
         with open(path) as json_file:
             data = json.load(json_file)
 
