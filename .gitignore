@@ -1,4 +1,4 @@
 .env
 __pycache__
-prompt_logs
 analyser_outputs
+llm_analysis_logs

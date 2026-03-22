@@ -3,17 +3,17 @@ def login(page, login, password):
     page.locator('input[name="studentLoginForm:password"]').fill(password)
     page.locator('a.btn.btn-primary', has_text='Login').click()
 
-def buy_stock(page, company):
+def buy_stock(page, code, units):
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
     page.wait_for_load_state('networkidle')
     page.locator('div#buyside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
     page.locator('#asxCode').wait_for(state='visible')
-    page.locator('#asxCode').select_option(company[0]['code'])
+    page.locator('#asxCode').select_option(code)
     page.wait_for_timeout(500)
     page.locator('#volume').wait_for(state='visible')
     page.locator('#volume').click()
-    page.locator('#volume').fill(str(company[1]))
+    page.locator('#volume').fill(str(units))
     page.wait_for_timeout(500)
     page.locator('div#market_limit .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
@@ -37,17 +37,17 @@ def get_sellable_company_info(page):
         companies.append({'code': code, 'price': float(last.replace(",", "")), 'href': href, 'holding': holding})
     return companies
 
-def sell_stock(page, company):
+def sell_stock(page, code, units):
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
     page.wait_for_load_state('networkidle')
     page.locator('div#sellside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
     page.locator('#sellAsxCode').wait_for(state='visible')
-    page.locator('#sellAsxCode').select_option(company[0]['code'])
+    page.locator('#sellAsxCode').select_option(code)
     page.wait_for_timeout(500)
     page.locator('#volume').wait_for(state='visible')
     page.locator('#volume').click()
-    page.locator('#volume').fill(str(company[1]))
+    page.locator('#volume').fill(str(units))
     page.wait_for_timeout(500)
     page.locator('div#market_limit .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)

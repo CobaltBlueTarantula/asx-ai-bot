@@ -1,4 +1,3 @@
-import requests
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -6,102 +5,144 @@ from openai import OpenAI
 
 load_dotenv()
 
-api_key = os.getenv("AI_API_KEY")
-invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
-
 client = OpenAI(
-  base_url = "https://integrate.api.nvidia.com/v1",
-  api_key = api_key
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key=os.getenv("AI_API_KEY")
 )
 
-def format_for_llm(cash, portfolio_value, top_companies, unit_limits, owned_shares=None, target_date = "2026-05-21"):
-    return f"""You are a disciplined short-term equity trader specialising in ASX-listed stocks.
-Your edge comes from SELECTIVE, high-conviction trades — not from deploying maximum 
-capital. You treat undeployed cash as a strategic asset, not a failure.
+SYSTEM_PROMPT = """You are a disciplined ASX equity trader. Your performance is judged 
+not by how much capital you deploy, but by your win rate and return on invested capital.
+A trader who makes 3 well-sized winning trades beats one who makes 15 mediocre ones.
+Undeployed cash is not failure — it is discipline."""
 
-CAPITAL DEPLOYMENT PHILOSOPHY:
-You have ${cash:,.2f} AUD available but you should NOT deploy it all at once.
-Only deploy capital proportional to your conviction in the signals you see.
 
-Use this as a guide:
-- Very high conviction (strong momentum + catalyst + volume surge + bullish technicals): deploy up to 25% of cash per position
-- Moderate conviction (2-3 bullish signals): deploy 10-15% of cash per position  
-- Low conviction (1-2 signals, mixed data): deploy 5-10% of cash per position, or skip
-- No clear signal: hold cash — doing nothing is a valid decision
+def analyse_stocks(top_companies, cash, portfolio_value, owned_shares, target_date):
+    """
+    Step 1: Ask the model to reason about the stocks openly.
+    No output format constraints — just think.
+    """
+    owned_str = f"Currently owned positions:\n{owned_shares}" if owned_shares else "No current positions."
 
-If you only see 1-2 genuinely strong setups, only buy those. Do not fill remaining 
-capital into mediocre setups just because cash is available. Cash is a position.
-Idle cash earns you optionality for the next run (this program runs 4x daily).
+    prompt = f"""You are analysing ASX stocks for short-term trades (now until {target_date}).
 
-Ask yourself before each buy: "Would I bet my own money on this right now?"
-If the answer is uncertain, reduce size or skip entirely.
+PORTFOLIO STATE:
+- Cash available: ${cash:,.2f} AUD
+- Total portfolio value: ${portfolio_value:,.2f} AUD
+- Max single position: ${portfolio_value * 0.25:,.2f} AUD (25% rule)
+- {owned_str}
 
-DESIRED GOAL:
-You have ${cash:,.2f} AUD in cash and must MAXIMISE portfolio value by {target_date}.
-- Risk tolerance: HIGH — capital gain is the priority, not capital preservation
-- Time horizon: NOW until {target_date} only
-- All shares are bought at Market to limit
-- Universe: ASX-listed stocks only
-- Brokerage is charged at the rate of $15.00 for orders valued up to and including $15,000.00. For each trade over $15,000.00, brokerage at the rate of 0.1% of the trade value will be charged.
-
-HARD CONSTRAINTS (you MUST NOT violate these):
-- Total spent across ALL buys cannot exceed ${cash:,.2f} AUD
-- No single position can exceed ${portfolio_value * 0.25:,.2f} AUD (25% of ${portfolio_value:,.2f} portfolio)
-- This program runs 4 times daily — do not try to deploy all capital at once
-- Reserve remaining cash for better opportunities in later runs today
-- You MUST use the pre-calculated unit limits below — do not calculate your own. Your ability to purchase is restricted by remaining funds or the diversification rule. Your purchase cannot result in you having a holding that exceeds 25% or more of the dollar value of your total portfolio.
-{unit_limits}
-
-CURRENT SITUATION:
-- The current date and time is {datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}
-- Your current portfolio value is {portfolio_value:,.2f}
-- {f"You currently own the following stocks:" if owned_shares is not None else "You are starting from scratch and do not currently own any stocks."}
-{owned_shares if owned_shares is not [] else ""}
-
-YOUR JOB:
-Analyse the following pre-filtered ASX stocks as well as your owned stocks and determine the following: 
-- Which stock should be immediately bought and how much
-- Which stock should be immediately sold and how much
-You must only provide a maximum of 5 instructions, so you must prioritise.
-
-WHAT TO LOOK FOR:
-Prioritise stocks with:
-- Strong recent price momentum (1m and 3m)
-- Upcoming earnings or catalysts BEFORE {target_date}
-- RSI not overbought (ideally 40-65 range for entry)
-- Volume surging above 20-day average (institutional accumulation signal)
-- MACD bullish crossover or histogram turning positive
-- Price near but not exceeding upper Bollinger Band (breakout potential)
-- ADX > 20 (trend has conviction)
-- Sector tailwinds
-
-De-prioritise (but don't auto-exclude):
-- Stocks with no upcoming catalysts
-- Very low volume / illiquid names
-- Stocks in confirmed downtrends (price < SMA20 < SMA50)
-
-You are also provided with the most recent news articles for every company to assist your decisions.
-
-FILTERED DATA:
+STOCK DATA:
 {top_companies}
 
-OUPUT FORMAT:
-Your output must only consist of a csv table containing the following columns: Action,CompanyCode,Units
-1. Every stock you want to buy must be formatted as such on a new line: BUY,COMPANY_CODE,UNITS
-2. Every stock you want to sell must be formatted as such on a new line: SELL,COMPANY_CODE,UNITS
-3. Every stock you own but don't sell will automatically be held.
+YOUR TASK:
+Go through each stock and assess it. For each one, note:
+1. What signals are present (momentum, RSI, MACD, volume, news)
+2. Whether those signals are genuinely convincing or mediocre
+3. A conviction rating: HIGH / MEDIUM / LOW / SKIP
 
-Return ONLY a CSV object. No preamble, no explanation outside the CSV table.
-"""
+Then select your top picks (aim for 2-4 maximum) and for each determine:
+- Exactly why you'd buy it right now
+- What % of available cash you'd deploy based on conviction:
+    HIGH conviction   → up to 20% of cash
+    MEDIUM conviction → 8-12% of cash
+    LOW conviction    → 4-6% of cash, or skip
+    SKIP              → do not buy
 
-def send_request(message):
+Be ruthless. If fewer than 2 stocks are genuinely compelling, only recommend those.
+Do not recommend a stock just to fill a quota.
+Also assess any owned positions and flag any that should be sold.
+
+Think through this carefully and write your reasoning."""
+
     response = client.chat.completions.create(
         model="meta/llama-3.1-405b-instruct",
-        messages=[{"role":"system","content":message},],
-        temperature=0.2,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": prompt}
+        ],
+        temperature=0.3,
         top_p=0.7,
-        max_tokens=512,
+        max_tokens=2048,  # room to actually reason
         stream=False
     )
 
     return response.choices[0].message.content
+
+
+def generate_orders(analysis, unit_limits, cash, portfolio_value, target_date):
+    """
+    Step 2: Given the reasoning from step 1, convert to CSV orders.
+    Strict formatting, low temperature, short output.
+    """
+    unit_limits_str = "\n".join(
+        f"  {code}: max {units} units"
+        for code, units in unit_limits.items()
+    )
+
+    prompt = f"""Based on the following trading analysis, generate the final order CSV.
+
+ANALYSIS:
+{analysis}
+
+HARD CONSTRAINTS:
+- Cash available: ${cash:,.2f} AUD
+- Max per position: ${portfolio_value * 0.25:,.2f} AUD
+- You MUST NOT exceed these pre-calculated unit limits:
+{unit_limits_str}
+- Maximum 5 orders total
+- Cannot buy fractional units, always round down
+- Do not buy stocks rated SKIP or LOW conviction in the analysis unless exceptional reason
+
+Convert the analysis recommendations into CSV orders only.
+Use the unit limits above — do not calculate your own quantities.
+Base unit quantities on the conviction-driven cash allocation in the analysis.
+
+OUTPUT FORMAT — return ONLY this, no other text:
+BUY,CODE,UNITS
+SELL,CODE,UNITS"""
+
+    response = client.chat.completions.create(
+        model="meta/llama-3.1-405b-instruct",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": prompt}
+        ],
+        temperature=0.1,   # very deterministic for order generation
+        top_p=0.7,
+        max_tokens=128,    # orders only, should be short
+        stream=False
+    )
+
+    return response.choices[0].message.content
+
+
+def send_request(top_companies, unit_limits, cash, portfolio_value,
+                 owned_shares=None, target_date="2026-05-21"):
+    """
+    Two-step pipeline:
+    1. Reason openly about which stocks to trade and sizing
+    2. Convert reasoning to strict CSV output
+    """
+    print("  Step 1: Analysing stocks...")
+    analysis = analyse_stocks(
+        top_companies, cash, portfolio_value, owned_shares, target_date
+    )
+    print(f"  Analysis complete ({len(analysis)} chars)")
+
+    print("  Step 2: Generating orders...")
+    orders = generate_orders(
+        analysis, unit_limits, cash, portfolio_value, target_date
+    )
+
+    return analysis, orders
+
+
+def format_for_llm(cash, portfolio_value, top_companies, unit_limits,
+                   owned_shares=None, target_date="2026-05-21"):
+    """
+    Kept for compatibility but send_request now handles everything internally.
+    Returns the analysis + orders tuple directly.
+    """
+    return send_request(
+        top_companies, unit_limits, cash, portfolio_value, owned_shares, target_date
+    )
