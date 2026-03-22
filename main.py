@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import json
 import os
 from datetime import datetime
+import asyncio
+import discord_handler as dscrd
 
 cash = 50000
 portfolio = 50000
@@ -83,12 +85,16 @@ if __name__ == "__main__":
 
         output = send_request(message)
 
+        log_message = f"Cash: {cash}\nPortfolio Value: {portfolio}"
+
         for line in output.strip().split('\n'):
             action, code, units = line.strip().split(',')
 
             if "buy" in action.lower():
-                print(f"Buying {code} x{units}")
-                # todo buy and implement proper logging
+                log_message += f"\nBuying {code} x{units}"
+                # todo buy
             elif "sell" in action.lower():
-                print(f"Selling {code} x{units}")
-                # todo sell and impelement proper logging
+                log_message += f"\nSelling {code} x{units}"
+                # todo sell
+        
+        dscrd.send_message(log_message)
