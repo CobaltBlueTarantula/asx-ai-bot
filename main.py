@@ -1,15 +1,12 @@
 from company_analyser import analyse
-from ai_handler import format_for_llm, send_request
-from playwright.sync_api import sync_playwright
+from ai_handler import send_request
 import asx_handler as asx
+import discord_handler as discord
 from dotenv import load_dotenv
+from datetime import datetime
+from playwright.sync_api import sync_playwright
 import json
 import os
-from datetime import datetime
-import asyncio
-import discord_handler as dscrd
-import asyncio
-import discord_handler as dscrd
 
 cash = 50000
 portfolio = 50000
@@ -128,4 +125,4 @@ if __name__ == "__main__":
             else:
                 log_message += f"\n- Unknown Instruction: {line.strip()}"
         
-        dscrd.send_message(log_message)
+        discord.send_message(log_message)
