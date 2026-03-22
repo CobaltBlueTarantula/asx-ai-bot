@@ -1,0 +1,39 @@
+name: ASX AI Bot
+
+on:
+  schedule:
+    # Run every 90 mins during market hours Mon-Fri (AEST = UTC+10/11)
+    # Market open: 10:00 AEST = 00:00 UTC (summer) or 23:00 UTC prev day (winter)
+    # Market close: 16:00 AEST = 06:00 UTC (summer) or 05:00 UTC prev day (winter)
+    # Using AEDT (UTC+11, daylight saving) — adjust +1hr in winter
+    - cron: '0 23 * * 0-4'   # 10:00 AEDT (prev day UTC)
+    - cron: '30 0 * * 1-5'   # 11:30 AEDT
+    - cron: '0 2 * * 1-5'    # 13:00 AEDT
+    - cron: '30 3 * * 1-5'   # 14:30 AEDT
+    - cron: '0 5 * * 1-5'    # 16:00 AEDT (close — for sells only)
+  workflow_dispatch:          # allows manual trigger from GitHub UI
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium
+
+      - name: Run ASX bot
+        env:
+          AI_API_KEY:            ${{ secrets.AI_API_KEY }}
+          DISCORD_WEBHOOK_URL:   ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ASX_LOGIN:             ${{ secrets.ASX_LOGIN }}
+          ASX_PASSWORD:          ${{ secrets.ASX_PASSWORD }}
+        run: python main.py
