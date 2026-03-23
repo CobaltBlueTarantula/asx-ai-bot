@@ -3,6 +3,7 @@ import pandas_ta as ta
 import pandas as pd
 import simplejson as json
 from datetime import datetime
+import os
 
 TARGET_DATE = "2026-05-12"
 TOP_N = 15
