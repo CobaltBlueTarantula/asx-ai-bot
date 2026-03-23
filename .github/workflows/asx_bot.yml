@@ -1,17 +1,19 @@
 name: ASX AI Bot
 
 on:
+  workflow_dispatch:
   schedule:
-    # Run every 90 mins during market hours Mon-Fri (AEST = UTC+10/11)
-    # Market open: 10:00 AEST = 00:00 UTC (summer) or 23:00 UTC prev day (winter)
-    # Market close: 16:00 AEST = 06:00 UTC (summer) or 05:00 UTC prev day (winter)
-    # Using AEDT (UTC+11, daylight saving) — adjust +1hr in winter
-    - cron: '0 23 * * 0-4'   # 10:00 AEDT (prev day UTC)
-    - cron: '30 0 * * 1-5'   # 11:30 AEDT
-    - cron: '0 2 * * 1-5'    # 13:00 AEDT
-    - cron: '30 3 * * 1-5'   # 14:30 AEDT
-    - cron: '0 5 * * 1-5'    # 16:00 AEDT (close — for sells only)
-  workflow_dispatch:          # allows manual trigger from GitHub UI
+    # AEDT (UTC+11): active October–April
+    - cron: '15 22 * * 0-4'  # targets 10:00 AM Sydney (scheduled 9:15 AM, -45min buffer)
+    - cron: '15 0 * * 1-5'   # targets 12:00 PM Sydney (scheduled 11:15 AM, -45min buffer)
+    - cron: '15 2 * * 1-5'   # targets  2:00 PM Sydney (scheduled  1:15 PM, -45min buffer)
+    - cron: '15 4 * * 1-5'   # targets  4:00 PM Sydney (scheduled  3:15 PM, -45min buffer)
+
+    # AEST (UTC+10): active April–October (Starts Saturday April 4th)
+    #- cron: '15 23 * * 0-4'  # targets 10:00 AM Sydney (scheduled 9:15 AM, -45min buffer)
+    #- cron: '15 1 * * 1-5'   # targets 12:00 PM Sydney (scheduled 11:15 AM, -45min buffer)
+    #- cron: '15 3 * * 1-5'   # targets  2:00 PM Sydney (scheduled  1:15 PM, -45min buffer)
+    #- cron: '15 5 * * 1-5'   # targets  4:00 PM Sydney (scheduled  3:15 PM, -45min buffer)
 
 jobs:
   run-bot:
