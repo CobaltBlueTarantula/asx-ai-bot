@@ -332,6 +332,9 @@ def analyse(companies = None):
             f"ADX={s['adx']}  MACD={s['macd_cross']}")
 
     # Save output
+    if not os.path.exists('analyser_outputs'):
+        os.makedirs(newpath)
+    
     path = f"analyser_outputs/top_companies_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
     with open(path, 'w') as f:
         json.dump(passed[:TOP_N], f, indent=2, ignore_nan=True)
