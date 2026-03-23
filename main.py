@@ -59,6 +59,12 @@ def analyse_owned_stocks():
 
 if __name__ == "__main__":
     with sync_playwright() as p:
+        # analyse top companies
+        path = analyse()
+        with open(path) as json_file:
+            data = json.load(json_file)
+
+        # setup headless browser after analysis
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto("https://game.asx.com.au/game/student/school/2026-1/login")
@@ -66,16 +72,11 @@ if __name__ == "__main__":
         page.wait_for_load_state('networkidle')
 
         cash, portfolio = asx.get_cash_and_portfolio_value(page)
-
-        # send llm request
-        path = analyse()
-        #path = "analyser_outputs/top_companies_2026-03-22_15-07-14.json"
-        with open(path) as json_file:
-            data = json.load(json_file)
-
+        
         unit_limits = get_max_units_per_company(data, cash, portfolio)
         held_shares = analyse_owned_stocks()
 
+        # send llm request
         analysis, output = send_request(
             data,
             unit_limits,
