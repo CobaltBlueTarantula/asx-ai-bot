@@ -85,6 +85,9 @@ if __name__ == "__main__":
         )
 
         # Save the reasoning to audit decisions
+        if not os.path.exists('llm_analysis_logs'):
+            os.makedirs('llm_analysis_logs')
+        
         analysis_path = f"llm_analysis_logs/llm_analysis_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         with open(analysis_path, 'w', encoding='utf-8') as f:
             f.write(analysis)
