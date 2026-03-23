@@ -333,7 +333,7 @@ def analyse(companies = None):
 
     # Save output
     if not os.path.exists('analyser_outputs'):
-        os.makedirs(newpath)
+        os.makedirs('analyser_outputs')
     
     path = f"analyser_outputs/top_companies_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
     with open(path, 'w') as f:
