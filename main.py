@@ -49,8 +49,8 @@ def analyse_owned_stocks():
     path = analyse(codes)
     with open(path) as json_file:
         owned_data = json.load(json_file)
-
-    for stock, i in owned_data:
+    
+    for i, stock in enumerate(owned_data):
         stock['units_holding'] = units_per_code[i]
 
     # delete file after
