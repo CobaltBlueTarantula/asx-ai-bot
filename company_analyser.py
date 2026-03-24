@@ -290,7 +290,7 @@ def parse_company_news(raw_news_items):
     return cleaned
 
 # returns path the file was saved to
-def analyse(companies = None):
+def analyse(companies = None, printOutput = False):
     passed = []
     failed = []
 
@@ -298,10 +298,12 @@ def analyse(companies = None):
         df_companies = pd.read_csv('resources/companies-2026.csv')
         companies = df_companies['Code'].drop_duplicates().tolist()  # deduplicated
 
-    print(f"Screening {len(companies)} companies...\n")
+    if printOutput:
+        print(f"Screening {len(companies)} companies...\n")
 
     for i, code in enumerate(companies):
-        print(f"[{i+1:4}/{len(companies)}] {code:6}", end=" ")
+        if printOutput:
+            print(f"[{i+1:4}/{len(companies)}] {code:6}", end=" ")
 
         params = get_filter_params(code)
         passes, reasons = passes_filter(params)
@@ -314,23 +316,27 @@ def analyse(companies = None):
             params['news'] = parse_company_news(ticker.news)
 
             passed.append(params)
-            print(f"🟢  score={params['score']:2}  RSI={params['rsi']}  1m={params['momentum_1m']}  MACD={params['macd_cross']}")
+            if printOutput:
+                print(f"🟢  score={params['score']:2}  RSI={params['rsi']}  1m={params['momentum_1m']}  MACD={params['macd_cross']}")
         else:
             failed.append({'code': code, 'reasons': reasons})
-            print(f"🔴  {', '.join(reasons)}")
+            if printOutput:
+                print(f"🔴  {', '.join(reasons)}")
 
     passed.sort(key=lambda x: x['score'], reverse=True)
+    if printOutput:
+        print(f"\n{'='*55}")
+        print(f"🟢 Passed: {len(passed):,} / {len(companies):,}")
+        print(f"🔴 Filtered: {len(failed):,} / {len(companies):,}")
 
-    print(f"\n{'='*55}")
-    print(f"🟢 Passed: {len(passed):,} / {len(companies):,}")
-    print(f"🔴 Filtered: {len(failed):,} / {len(companies):,}")
-
-    print(f"\nTop {min(TOP_N, len(passed))} candidates:")
-    for s in passed[:TOP_N]:
-        earnings_flag = "📅" if s['earnings_before_target'] else "  "
-        print(f"  {earnings_flag}{s['code']:6} score={s['score']:2}  "
-            f"RSI={s['rsi']}  1m={s['momentum_1m']}  "
-            f"ADX={s['adx']}  MACD={s['macd_cross']}")
+    # print final results
+    if printOutput:
+        print(f"\nTop {min(TOP_N, len(passed))} candidates:")
+        for s in passed[:TOP_N]:
+            earnings_flag = "📅" if s['earnings_before_target'] else "  "
+            print(f"  {earnings_flag}{s['code']:6} score={s['score']:2}  "
+                f"RSI={s['rsi']}  1m={s['momentum_1m']}  "
+                f"ADX={s['adx']}  MACD={s['macd_cross']}")
 
     # Save output
     if not os.path.exists('analyser_outputs'):
@@ -340,8 +346,9 @@ def analyse(companies = None):
     with open(path, 'w') as f:
         json.dump(passed[:TOP_N], f, indent=2, ignore_nan=True)
 
-    print(f"\nSaved top {min(TOP_N, len(passed))} to {path}")
+    if printOutput:
+        print(f"\nSaved top {min(TOP_N, len(passed))} to {path}")
     return path
 
 if __name__ == "__main__":
-    analyse()
+    analyse(printOutput=True)

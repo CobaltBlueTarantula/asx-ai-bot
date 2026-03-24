@@ -4,7 +4,12 @@ def login(page, login, password):
     page.locator('a.btn.btn-primary', has_text='Login').click()
 
 def buy_stock(page, code, units):
+    page.goto("https://game.asx.com.au/game/play/school/2026-1/portfolio")
+    page.wait_for_load_state('networkidle')
+    
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
+    page.wait_for_load_state('networkidle')
+    
     page.wait_for_load_state('networkidle')
     page.locator('div#buyside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
@@ -38,7 +43,12 @@ def get_sellable_company_info(page):
     return companies
 
 def sell_stock(page, code, units):
+    page.goto("https://game.asx.com.au/game/play/school/2026-1/portfolio")
+    page.wait_for_load_state('networkidle')
+    
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
+    page.wait_for_load_state('networkidle')
+
     page.wait_for_load_state('networkidle')
     page.locator('div#sellside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)

@@ -65,7 +65,7 @@ if __name__ == "__main__":
             data = json.load(json_file)
 
         # setup headless browser after analysis
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         page.goto("https://game.asx.com.au/game/student/school/2026-1/login")
         asx.login(page, login, password)
