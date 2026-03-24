@@ -1,6 +1,8 @@
-import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from datetime import datetime
+import time
+import os
 
 load_dotenv()
 
@@ -122,16 +124,31 @@ def send_request(top_companies, unit_limits, cash, portfolio_value,
     1. Reason openly about which stocks to trade and sizing
     2. Convert reasoning to strict CSV output
     """
-    print("  Step 1: Analysing stocks...")
+
+    start = time.time()
+    print("Reasoning through best options...")
     analysis = analyse_stocks(
         top_companies, cash, portfolio_value, owned_shares, target_date
     )
-    print(f"  Analysis complete ({len(analysis)} chars)")
+    print(f"  Reasoning complete ({len(analysis)} chars)")
 
-    print("  Step 2: Generating orders...")
+    analysis_path = f"llm_analysis_logs/llm_analysis_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+    with open(analysis_path, 'w', encoding='utf-8') as f:
+        f.write(analysis)
+        print(f"  Saved reasoning to {analysis_path}")
+
+    elapsed = int(time.time() - start)
+    print(f"  ✓ Finished in {elapsed} seconds")
+
+    start = time.time()
+    print("Generating final actions...")
+    
     orders = generate_orders(
         analysis, unit_limits, cash, portfolio_value, target_date
     )
+
+    elapsed = int(time.time() - start)
+    print(f"  ✓ Finished in {elapsed} seconds")
 
     return analysis, orders
 

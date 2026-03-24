@@ -3,8 +3,8 @@ from ai_handler import send_request
 import asx_handler as asx
 import discord_handler as discord
 from dotenv import load_dotenv
-from datetime import datetime
 from playwright.sync_api import sync_playwright
+import time
 import json
 import os
 
@@ -59,10 +59,17 @@ def analyse_owned_stocks():
 
 if __name__ == "__main__":
     with sync_playwright() as p:
+        
+        start = time.time()
+        print("Running automatic stock analysis...")
+        
         # analyse top companies
         path = analyse()
         with open(path) as json_file:
             data = json.load(json_file)
+
+        elapsed = int(time.time() - start)
+        print(f"  ✓ Finished in {elapsed} seconds")
 
         # setup headless browser after analysis
         browser = p.chromium.launch(headless=False)
@@ -88,24 +95,21 @@ if __name__ == "__main__":
         # Save the reasoning to audit decisions
         if not os.path.exists('llm_analysis_logs'):
             os.makedirs('llm_analysis_logs')
-        
-        analysis_path = f"llm_analysis_logs/llm_analysis_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
-        with open(analysis_path, 'w', encoding='utf-8') as f:
-            f.write(analysis)
-        print(f"Saved analysis to {analysis_path}")
 
         held_str = "\n".join(f"- *{share['code']}* x{share['units_holding']}" for share in held_shares) if held_shares else ""
         held_section = f"## Held Shares:\n{held_str}\n" if held_str else ""
 
         log_message = f"# Status\n**Cash:** ${cash:,.2f}\n**Portfolio Value:** ${portfolio:,.2f}\n{held_section}# Actions:"
 
+        start = time.time()
+        print("\nPerforming actions...")
         for line in output.strip().split('\n'):
             action, code, units = line.strip().split(',')
 
             try:
                 units = max(1, int(float(units)))
             except (ValueError, TypeError):
-                print(f"  ⚠ Invalid units for {code}: {units}, skipping")
+                print(f"  Invalid units for {code}: {units}, skipping")
                 continue
 
             if "buy" in action.lower():
@@ -116,6 +120,7 @@ if __name__ == "__main__":
                 units = min(units, max_units) # clamp
 
                 log_message += f"\n- Buying *{code}* x{units}"
+                print(f"  Buying {code} x{units}")
                 asx.buy_stock(page, code, units)
             elif "sell" in action.lower():
                 owned = next((s['units_holding'] for s in held_shares if s['code'] == code), 0)
@@ -125,8 +130,12 @@ if __name__ == "__main__":
                 units = min(units, owned) # clamp
 
                 log_message += f"\n- Selling *{code}* x{units}"
+                print(f"  Selling {code} x{units}")
                 asx.sell_stock(page, code, units)
             else:
                 log_message += f"\n- Unknown Instruction: {line.strip()}"
         
+        elapsed = int(time.time() - start)
+        print(f"  ✓ Finished in {elapsed} seconds")
+
         discord.send_message(log_message)

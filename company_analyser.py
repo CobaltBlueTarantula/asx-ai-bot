@@ -78,6 +78,11 @@ def get_filter_params(code):
 
         # ── Fundamentals (fast, ASX-safe) ───────────────────────
         info = ticker.info
+
+        # skip ETFs
+        if info.get('quoteType') == 'ETF':
+            return None
+
         market_cap   = info.get('marketCap')
         pe_ratio     = info.get('trailingPE')
         gross_margin = info.get('grossMargins')
@@ -90,7 +95,7 @@ def get_filter_params(code):
             if len(rev) >= 4:
                 recent_yr = rev.iloc[:4].sum()
                 prior_yr  = rev.iloc[4:8].sum() if len(rev) >= 8 else rev.iloc[-4:].sum()
-                revenue_growth = (recent_yr - prior_yr) / abs(prior_yr)
+                revenue_growth = (recent_yr - prior_yr) / abs(prior_yr) if prior_yr != 0 else None
         except:
             revenue_growth = info.get('revenueGrowth')
 
