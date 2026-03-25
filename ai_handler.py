@@ -132,6 +132,10 @@ def send_request(top_companies, unit_limits, cash, portfolio_value,
     )
     print(f"  Reasoning complete ({len(analysis)} chars)")
 
+    # Save output and create folder if doesn't exist
+    if not os.path.exists('llm_analysis_logs'):
+        os.makedirs('llm_analysis_logs')
+                     
     analysis_path = f"llm_analysis_logs/llm_analysis_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
     with open(analysis_path, 'w', encoding='utf-8') as f:
         f.write(analysis)
