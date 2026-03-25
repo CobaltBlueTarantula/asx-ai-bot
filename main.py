@@ -72,7 +72,7 @@ if __name__ == "__main__":
         print(f"  ✓ Finished in {elapsed} seconds")
 
         # setup headless browser after analysis
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto("https://game.asx.com.au/game/student/school/2026-1/login")
         asx.login(page, login, password)
