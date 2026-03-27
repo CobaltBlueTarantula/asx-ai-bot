@@ -36,7 +36,7 @@ def get_max_units_per_company(companies, cash, portfolio_value):
         if c.get('current_price') and c['current_price'] > 0
     }
 
-def analyse_owned_stocks():
+def analyse_owned_stocks(page):
     # get additional info from ASX
     asx_data = asx.get_sellable_company_info(page)
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         cash, portfolio = asx.get_cash_and_portfolio_value(page)
         
         unit_limits = get_max_units_per_company(data, cash, portfolio)
-        held_shares = analyse_owned_stocks()
+        held_shares = analyse_owned_stocks(page)
 
         # send llm request
         analysis, output = send_request(
