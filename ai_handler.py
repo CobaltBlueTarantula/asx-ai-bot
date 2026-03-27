@@ -16,7 +16,6 @@ not by how much capital you deploy, but by your win rate and return on invested 
 A trader who makes 3 well-sized winning trades beats one who makes 15 mediocre ones.
 Undeployed cash is not failure — it is discipline."""
 
-
 def analyse_stocks(top_companies, cash, portfolio_value, owned_shares, target_date):
     """
     Step 1: Ask the model to reason about the stocks openly.

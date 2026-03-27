@@ -39,7 +39,8 @@ def get_sellable_company_info(page):
         href = row.locator('td:first-child a').first.get_attribute('href')
         holding = int(row.locator('td:nth-child(2)').inner_text().strip().replace(",", ""))
         last = row.locator('td:nth-child(4)').inner_text().strip().replace('$', '')
-        companies.append({'code': code, 'price': float(last.replace(",", "")), 'href': href, 'holding': holding})
+        profit_loss = row.locator('td:nth-child(6)').inner_text().strip().replace('$', '')
+        companies.append({'code': code, 'price': float(last.replace(",", "")), 'href': href, 'holding': holding, 'profit_loss': profit_loss})
     return companies
 
 def sell_stock(page, code, units):

@@ -37,21 +37,19 @@ def get_max_units_per_company(companies, cash, portfolio_value):
     }
 
 def analyse_owned_stocks():
-    codes = []
-    units_per_code = []
-    for company in asx.get_sellable_company_info(page):
-        code = company.get("code")
-        units = company.get("holding")
+    # get additional info from ASX
+    asx_data = asx.get_sellable_company_info(page)
 
-        codes.append(code)
-        units_per_code.append(units)
-
+    # analyse owned stocks
+    codes = [comp['code'] for comp in asx_data]
     path = analyse(codes)
     with open(path) as json_file:
         owned_data = json.load(json_file)
-    
+
+    # add the data from ASX to the analysed data
     for i, stock in enumerate(owned_data):
-        stock['units_holding'] = units_per_code[i]
+        stock['units_holding'] = asx_data[i]['holding']
+        stock['profit_loss'] = asx_data[i]['profit_loss']
 
     # delete file after
     os.remove(path)
