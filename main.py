@@ -55,6 +55,14 @@ def analyse_owned_stocks(page):
     os.remove(path)
     return owned_data
 
+def setup_browser():
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    page.goto("https://game.asx.com.au/game/student/school/2026-1/login")
+    asx.login(page, login, password)
+    page.wait_for_load_state('networkidle')
+    return (browser, page)
+
 if __name__ == "__main__":
     with sync_playwright() as p:
         
@@ -70,13 +78,9 @@ if __name__ == "__main__":
         print(f"  ✓ Finished in {elapsed} seconds")
 
         # setup headless browser after analysis
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto("https://game.asx.com.au/game/student/school/2026-1/login")
-        asx.login(page, login, password)
-        page.wait_for_load_state('networkidle')
-
+        browser, page = setup_browser()
         cash, portfolio = asx.get_cash_and_portfolio_value(page)
+        browser.close()
         
         unit_limits = get_max_units_per_company(data, cash, portfolio)
         held_shares = analyse_owned_stocks(page)
@@ -100,6 +104,7 @@ if __name__ == "__main__":
         log_message = f"# Status\n**Cash:** ${cash:,.2f}\n**Portfolio Value:** ${portfolio:,.2f}\n{held_section}# Actions:"
 
         start = time.time()
+        browser, page = setup_browser()
         print("\nPerforming actions...")
         for line in output.strip().split('\n'):
             action, code, units = line.strip().split(',')
