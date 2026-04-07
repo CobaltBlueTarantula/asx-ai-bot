@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
   schedule:
     # AEDT (UTC+11): active October–April
-    - cron: '55 21 * * 0-4'  # targets 10:00 AM Sydney (scheduled 8:55 AM, -65min buffer)
-    - cron: '55 23 * * 0-4'  # targets 12:00 PM Sydney (scheduled 10:55 AM, -65min buffer)
-    - cron: '55 1 * * 1-5'   # targets  2:00 PM Sydney (scheduled 12:55 PM, -65min buffer)
+    # - cron: '55 21 * * 0-4'  # targets 10:00 AM Sydney (scheduled 8:55 AM, -65min buffer)
+    # - cron: '55 23 * * 0-4'  # targets 12:00 PM Sydney (scheduled 10:55 AM, -65min buffer)
+    # - cron: '55 1 * * 1-5'   # targets  2:00 PM Sydney (scheduled 12:55 PM, -65min buffer)
     #- cron: '55 3 * * 1-5'   # targets  4:00 PM Sydney (scheduled  2:55 PM, -65min buffer)
 
     # AEST (UTC+10): active April–October (Starts Saturday April 4th)
-    #- cron: '55 22 * * 0-4'  # targets 10:00 AM Sydney (scheduled 8:55 AM, -65min buffer)
-    #- cron: '55 0 * * 1-5'   # targets 12:00 PM Sydney (scheduled 10:55 AM, -65min buffer)
-    #- cron: '55 2 * * 1-5'   # targets  2:00 PM Sydney (scheduled 12:55 PM, -65min buffer)
+    - cron: '55 22 * * 0-4'  # targets 10:00 AM Sydney (scheduled 8:55 AM, -65min buffer)
+    - cron: '55 0 * * 1-5'   # targets 12:00 PM Sydney (scheduled 10:55 AM, -65min buffer)
+    - cron: '55 2 * * 1-5'   # targets  2:00 PM Sydney (scheduled 12:55 PM, -65min buffer)
     #- cron: '55 4 * * 1-5'   # targets  4:00 PM Sydney (scheduled  2:55 PM, -65min buffer)
 
 jobs:
