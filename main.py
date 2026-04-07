@@ -80,10 +80,11 @@ if __name__ == "__main__":
         # setup headless browser after analysis
         browser, page = setup_browser()
         cash, portfolio = asx.get_cash_and_portfolio_value(page)
-        browser.close()
         
         unit_limits = get_max_units_per_company(data, cash, portfolio)
         held_shares = analyse_owned_stocks(page)
+
+        browser.close()
 
         # send llm request
         analysis, output = send_request(
