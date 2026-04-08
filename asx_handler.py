@@ -9,8 +9,7 @@ def buy_stock(page, code, units):
     
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
     page.wait_for_load_state('networkidle')
-    
-    page.wait_for_load_state('networkidle')
+
     page.locator('div#buyside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
     page.locator('#asxCode').wait_for(state='visible')
@@ -26,7 +25,9 @@ def buy_stock(page, code, units):
 
     page.wait_for_timeout(500)
     page.locator('#saveBtn').evaluate('el => el.click()')
-    page.wait_for_load_state('networkidle')
+    
+    with page.expect_navigation(wait_until='networkidle'):
+        page.locator('#saveBtn').evaluate('el => el.click()')
 
 # SELLING
 def get_sellable_company_info(page):
@@ -50,7 +51,6 @@ def sell_stock(page, code, units):
     page.goto("https://game.asx.com.au/game/play/school/2026-1/orders/add")
     page.wait_for_load_state('networkidle')
 
-    page.wait_for_load_state('networkidle')
     page.locator('div#sellside .ui-radiobutton-box').dispatch_event('click')
     page.wait_for_timeout(500)
     page.locator('#sellAsxCode').wait_for(state='visible')
@@ -66,7 +66,9 @@ def sell_stock(page, code, units):
     
     page.wait_for_timeout(500)
     page.locator('#saveBtn').evaluate('el => el.click()')
-    page.wait_for_load_state('networkidle')
+    
+    with page.expect_navigation(wait_until='networkidle'):
+        page.locator('#saveBtn').evaluate('el => el.click()')
 
 def get_cash_and_portfolio_value(page):
     cash_text = page.locator('tr:has(td:text("Cash:")) td.ie8-td-last-child').inner_text().strip()
