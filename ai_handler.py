@@ -17,25 +17,39 @@ A trader who makes 3 well-sized winning trades beats one who makes 15 mediocre o
 Undeployed cash is not failure — it is discipline."""
 
 def analyse_stocks(top_companies, cash, portfolio_value, owned_shares, target_date):
-    """
-    Step 1: Ask the model to reason about the stocks openly.
-    No output format constraints — just think.
-    """
+    
+    # give a cash status warning
+    if cash <= 0:
+        cash_status = "WARNING: You have NO cash available. You may ONLY sell positions — do not recommend any buys."
+    elif cash < portfolio_value * 0.10:
+        cash_status = f"WARNING: Cash is very low (${cash:,.2f}). Consider whether selling a weak position to free up capital is smarter than buying anything new."
+    elif cash < portfolio_value * 0.25:
+        cash_status = f"Cash is limited (${cash:,.2f}). Be very selective — only the highest conviction buys are worth it."
+    else:
+        cash_status = f"Cash available: ${cash:,.2f} AUD"
+
     owned_str = f"Currently owned positions:\n{owned_shares}" if owned_shares else "No current positions."
 
     prompt = f"""You are analysing ASX stocks for short-term trades (now until {target_date}).
 
 PORTFOLIO STATE:
-- Cash available: ${cash:,.2f} AUD
+- {cash_status}
 - Total portfolio value: ${portfolio_value:,.2f} AUD
 - Max single position: ${portfolio_value * 0.25:,.2f} AUD (25% rule)
 - {owned_str}
+
+CRITICAL RULE: If cash is 0 or negative, you MUST NOT recommend any buys.
+Your only options when cash is exhausted are:
+1. Hold everything
+2. Sell a weak/losing position to free up cash for a better opportunity
 
 STOCK DATA:
 {top_companies}
 
 YOUR TASK:
-Go through each stock and assess it. For each one, note:
+First, check your cash. If it is <= 0, skip straight to assessing owned positions for sells.
+
+Otherwise, go through each stock and assess it. For each one, note:
 1. What signals are present (momentum, RSI, MACD, volume, news)
 2. Whether those signals are genuinely convincing or mediocre
 3. A conviction rating: HIGH / MEDIUM / LOW / SKIP
@@ -48,9 +62,8 @@ Then select your top picks (aim for 2-4 maximum) and for each determine:
     LOW conviction    → 4-6% of cash, or skip
     SKIP              → do not buy
 
-Be ruthless. If fewer than 2 stocks are genuinely compelling, only recommend those.
-Do not recommend a stock just to fill a quota.
-Also assess any owned positions and flag any that should be sold.
+Also assess owned positions — if any are underperforming or showing sell signals, 
+flag them for sale, especially if cash is low and a better opportunity exists.
 
 Think through this carefully and write your reasoning."""
 
@@ -62,7 +75,7 @@ Think through this carefully and write your reasoning."""
         ],
         temperature=0.3,
         top_p=0.7,
-        max_tokens=2048,  # room to actually reason
+        max_tokens=2048,
         stream=False
     )
 
@@ -70,10 +83,12 @@ Think through this carefully and write your reasoning."""
 
 
 def generate_orders(analysis, unit_limits, cash, portfolio_value, target_date):
-    """
-    Step 2: Given the reasoning from step 1, convert to CSV orders.
-    Strict formatting, low temperature, short output.
-    """
+
+    # Hard block buys at the generation step too if no cash
+    no_cash_instruction = ""
+    if cash <= 0:
+        no_cash_instruction = "\nCRITICAL: Cash is $0 or negative. Any BUY lines are FORBIDDEN. Only SELL lines are permitted.\n"
+
     unit_limits_str = "\n".join(
         f"  {code}: max {units} units"
         for code, units in unit_limits.items()
@@ -85,13 +100,14 @@ ANALYSIS:
 {analysis}
 
 HARD CONSTRAINTS:
-- Cash available: ${cash:,.2f} AUD
+- Cash available: ${cash:,.2f} AUD{no_cash_instruction}
 - Max per position: ${portfolio_value * 0.25:,.2f} AUD
 - You MUST NOT exceed these pre-calculated unit limits:
 {unit_limits_str}
 - Maximum 5 orders total
 - Cannot buy fractional units, always round down
 - Do not buy stocks rated SKIP or LOW conviction in the analysis unless exceptional reason
+- If cash is 0 or less, output ONLY sell orders or nothing at all
 
 Convert the analysis recommendations into CSV orders only.
 Use the unit limits above — do not calculate your own quantities.
@@ -107,9 +123,9 @@ SELL,CODE,UNITS"""
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": prompt}
         ],
-        temperature=0.1,   # very deterministic for order generation
+        temperature=0.1,
         top_p=0.7,
-        max_tokens=128,    # orders only, should be short
+        max_tokens=128,
         stream=False
     )
 
